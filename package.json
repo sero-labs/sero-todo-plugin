@@ -2,6 +2,7 @@
   "name": "@sero-ai/todo-plugin",
   "version": "0.1.1",
   "description": "Todo app for Sero — Pi extension with optional web UI",
+  "type": "module",
   "keywords": [
     "pi-package"
   ],
