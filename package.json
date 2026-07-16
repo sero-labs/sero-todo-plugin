@@ -18,6 +18,7 @@
   "sero": {
     "app": {
       "id": "todo",
+      "styleIsolation": "scope",
       "name": "Todo",
       "icon": "check-square",
       "stateFile": ".sero/apps/todo/state.json",
@@ -47,6 +48,7 @@
     "zod": ">=4.0.0"
   },
   "devDependencies": {
+    "@sero-ai/plugin-vite": "^0.1.0",
     "@module-federation/vite": "^1.11.0",
     "@sero-ai/app-runtime": "^0.1.3",
     "@tailwindcss/vite": "^4.1.18",
