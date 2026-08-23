@@ -15,6 +15,7 @@ import { StringEnum } from '@earendil-works/pi-ai';
 import type { ExtensionAPI } from '@earendil-works/pi-coding-agent';
 import { Text } from '@earendil-works/pi-tui';
 import { Type } from 'typebox';
+import { withStateLock } from '@sero-ai/extension-runtime';
 
 import type { TodoState, Todo } from '../shared/types';
 import { DEFAULT_TODO_STATE } from '../shared/types';
@@ -57,6 +58,9 @@ const TodoParams = Type.Object({
   id: Type.Optional(Type.Number({ description: 'Todo ID (for toggle)' })),
 });
 
+/** Actions that write state.json — they run under the shared state lock. */
+const MUTATING_ACTIONS = new Set<string>(['add', 'toggle', 'clear']);
+
 // ── Extension ──────────────────────────────────────────────────
 
 export default function (pi: ExtensionAPI) {
@@ -90,8 +94,7 @@ export default function (pi: ExtensionAPI) {
       }
       statePath = resolvedPath;
 
-      const state = await readState(statePath);
-
+      const dispatch = async (state: TodoState) => {
       switch (params.action) {
         case 'list': {
           const text = state.todos.length
@@ -166,6 +169,15 @@ export default function (pi: ExtensionAPI) {
             details: {},
           };
       }
+      };
+
+      if (MUTATING_ACTIONS.has(params.action)) {
+        // Read-modify-write actions hold the shared `<stateFile>.lock` mutex
+        // so a tool call cannot interleave with the Sero host writing the
+        // same file for the UI (#428).
+        return withStateLock(statePath, async () => dispatch(await readState(statePath)));
+      }
+      return dispatch(await readState(statePath));
     },
 
     renderCall(args, theme) {
